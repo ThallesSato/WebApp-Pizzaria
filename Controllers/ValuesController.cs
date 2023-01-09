@@ -1,32 +1,37 @@
 ﻿using Contoso.Database;
 using Contoso.Models;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using System.Linq.Expressions;
-using System.Net;
 
 namespace Contoso.Controllers
 {
     [Route("[controller]")]
     [ApiController]
+    [Authorize(AuthenticationSchemes =JwtBearerDefaults.AuthenticationScheme)]
     public class PizzaController : ControllerBase
     {
+        private readonly AppDbContext _context;
+
+        public PizzaController(AppDbContext context)
+        {
+            _context = context;
+        }
+
         // GET
         [HttpGet]
         public IEnumerable<Pizza> GetPizzas()
         {
-            using (var dbContext = new AppDbContext())
             {
-                return dbContext.Pizzas.ToList();
+                return _context.Pizzas.ToList();
             }
         }
         // GET by Id action
         [HttpGet("{id}")]
         public IActionResult GetPizza(int id)
         {
-            using (var dbContext = new AppDbContext())
             {
-                var Pizza = dbContext.Pizzas.Find(id);
+                var Pizza = _context.Pizzas.Find(id);
                 if (Pizza == null)
                 {
                     return NotFound("Pizza não encontrada.");
@@ -38,15 +43,14 @@ namespace Contoso.Controllers
         [HttpPost]
         public IActionResult PostPizza(Pizza pizza)
         {
-            using (var dbContext = new AppDbContext())
             {
                 if (!ModelState.IsValid)
                 {
                     return BadRequest(ModelState);
                 }
                 pizza.Created = DateTime.Now;
-                dbContext.Pizzas.Add(pizza);
-                dbContext.SaveChanges();
+                _context.Pizzas.Add(pizza);
+                _context.SaveChanges();
 
                 return CreatedAtAction(nameof(GetPizza), new { id = pizza.Id }, pizza);
 
@@ -56,14 +60,13 @@ namespace Contoso.Controllers
         [HttpPut("{id}")]
         public IActionResult PutPizza(int id, Pizza pizza)
         {
-            using (var dbContext = new AppDbContext())
             {
 
                 if (!ModelState.IsValid)
                 {
                     return BadRequest(ModelState);
                 }
-                var oldpizza = dbContext.Pizzas.Find(id);
+                var oldpizza = _context.Pizzas.Find(id);
                 if (oldpizza == null)
                 {
                     return NotFound("Pizza não encontrada para ser atualizada.");
@@ -81,9 +84,9 @@ namespace Contoso.Controllers
                 oldpizza.Temglutem = pizza.Temglutem;
                 oldpizza.Price= pizza.Price;
                 oldpizza.Desc= pizza.Desc;
-                dbContext.Pizzas.Update(oldpizza);
-            
-                dbContext.SaveChanges();
+                _context.Pizzas.Update(oldpizza);
+
+                _context.SaveChanges();
                 return Ok();
             }
         }
@@ -91,15 +94,14 @@ namespace Contoso.Controllers
         [HttpDelete("{id}")]
         public IActionResult DeletePizza(int id)
         {
-            using (var dbContext = new AppDbContext())
             {
-                var pizza = dbContext.Pizzas.Find(id);
+                var pizza = _context.Pizzas.Find(id);
                 if (pizza == null)
                 {
                     return NotFound("Pizza não encontrada.");
                 }
-                dbContext.Pizzas.Remove(pizza);
-                dbContext.SaveChanges();
+                _context.Pizzas.Remove(pizza);
+                _context.SaveChanges();
                 return Ok();
             }
         }
